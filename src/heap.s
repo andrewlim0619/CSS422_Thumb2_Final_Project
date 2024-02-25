@@ -19,8 +19,22 @@ INVALID		EQU		-1			; an invalid id
 ; Memory Control Block Initialization
 		EXPORT	_heap_init
 _heap_init
-	;; Implement by yourself
+		LDR 	R0, =MCB_TOP+0x4	; 	0x20006804
+		LDR		R1, =0x20006C00
+		B		_heap_mcb_init
+			
+_heap_mcb_init
+		CMP 	R0, R1
+		BEQ		_heap_init_done
+		LDR 	R2, [R0]			; 	value at 0x20006804
+		MOV		R2, #0x0
+		ADD		R0, R0, #0x1
+		LDR 	R2, [R0]			; 	value at 0x20006805
+		MOV		R2, #0x0
+		ADD		R0, R0, #0x1		; 	value at 0x20006806
+		B 		_heap_mcb_init
 	
+_heap_init_done
 		MOV		pc, lr
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -28,7 +42,9 @@ _heap_init
 ; void* _k_alloc( int size )
 		EXPORT	_kalloc
 _kalloc
-	;; Implement by yourself
+
+_ralloc
+		
 		MOV		pc, lr
 		
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
