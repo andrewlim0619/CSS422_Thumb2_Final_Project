@@ -119,7 +119,7 @@ _signal_handler
 		;; If R0 is SIG_ALRM, (i.e., 14), save it in memory address at
 		;; 0x20007B84. Return the previous value of 0x2007B84 to main( ) through R0.
 		CMP	R0, SIG_ALARM
-		BNE	stop			; if R0 != SIG_ALARM, continue --> line 64, else Branch to "stop"
+		BNE	return			; if R0 != SIG_ALARM, continue --> line 64, else Branch to "stop"
 
 if_Clause
 		LDR	R2, =USR_HANDLER	; Load R2 with the address of a user-given signal handler function 
@@ -129,6 +129,6 @@ if_Clause
 		STR	R1, [R2]		; Store *func located in R1 in the address of R2, 0x20007B84 (USR_HANDLER at R2)
 		MOV 	R0, R3 			; Move value in R3 to R0 to return value to main through R0
 				
-stop
+return
 		MOV	pc, lr			; return to Reset_Handler
 		END		
