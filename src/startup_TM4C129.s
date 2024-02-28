@@ -291,12 +291,25 @@ PendSV_Handler\
                 ENDP
 SysTick_Handler\
                 PROC		; (Step 2)
+				IMPORT	_timer_update
 				EXPORT  SysTick_Handler           [WEAK]
-				; Save registers
-				; Invoke _timer_update
-				; Retrieve registers
+				STMFD	sp!, {r1-r12,lr}		; save registers; Save registers
+				BL		_timer_update			; Invoke _timer_update
+				LDMFD	sp!, {r1-r12,lr}		; Retrieve registers
+				
 				; Change from MSP to PSP
-				; Go back to the user program
+				; In line 214, we are setting initial stack pointer to the MSP (Main Stack Pointer)
+				; To define the Stack Pointer Selection, change two bits:
+				;		1. nPRIV: Defines prviviledged level in Thread Mode
+				;			a. If bit is 0 (default), it is privileged level in Thread Mode
+				;			b. If bit is 1, processor is always in priviledged access level
+				;		2. SPSEL: Defines the Stack Pointer Selection
+				;			a. If bit is 0 (default), Thread mode uses Main Stack Pointer (PSP)
+				;			b. If bit is 1, Thread mode uses Process Stack Pointer (PSP)
+			
+				MOVS	R0,	#3	; Set SPSEL bit 1, nPriv bit 1
+				MSR		CONTROL, R0	; Now thread mode uses PSP for user
+				BX		lr	; Go back to the user program
                 B       .
                 ENDP
 
