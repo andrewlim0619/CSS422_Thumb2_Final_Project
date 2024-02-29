@@ -235,8 +235,8 @@ Reset_Handler   PROC
 				MSR	PSP, R0
 			
 				; Change CPU mode into unprivileged thread mode using PSP
-				MOVS	R0,	#3	; Set SPSEL bit 1, nPriv bit 0
-				MSR	CONTROL, R0	; Now thread mode uses PSP for user
+				MOVS	R0,	#3				; Set SPSEL bit 1, nPriv bit 0
+				MSR	CONTROL, R0				; Now thread mode uses PSP for user
 	
                 LDR     R0, =__main
                 BX      R0
@@ -268,16 +268,15 @@ UsageFault_Handler\
                 EXPORT  UsageFault_Handler        [WEAK]
                 B       .
                 ENDP
-SVC_Handler     PROC 								; (Step 2)
+SVC_Handler     PROC 							; (Step 2)
 				EXPORT  SVC_Handler               [WEAK]
 				IMPORT	_syscall_table_jump
 					
-				STMFD	sp!, {r2-r12,lr}			; Save registers 
-				BL		_syscall_table_jump			; Invoke _syscall_table_jump	
-				LDMFD	sp!, {r2-r12,lr}			; Retrieve registers
+				STMFD	sp!, {r2-r12,lr}		; Save registers 
+				BL		_syscall_table_jump		; Invoke _syscall_table_jump	
+				LDMFD	sp!, {r2-r12,lr}		; Retrieve registers
 				
-				BX		lr							; Go back to stdlib.s
-                B       .
+				BX		lr						; Go back to stdlib.s
                 ENDP
 DebugMon_Handler\
                 PROC
@@ -293,9 +292,9 @@ SysTick_Handler\
                 PROC		; (Step 2)
 				IMPORT	_timer_update
 				EXPORT  SysTick_Handler           [WEAK]
-				STMFD	sp!, {r1-r12,lr}		; save registers; Save registers
+				STMFD	sp!, {r2-r12,lr}		; save registers; Save registers
 				BL		_timer_update			; Invoke _timer_update
-				LDMFD	sp!, {r1-r12,lr}		; Retrieve registers
+				LDMFD	sp!, {r2-r12,lr}		; Retrieve registers
 				
 				; Change from MSP to PSP
 				; In line 214, we are setting initial stack pointer to the MSP (Main Stack Pointer)
@@ -307,11 +306,10 @@ SysTick_Handler\
 				;			a. If bit is 0 (default), Thread mode uses Main Stack Pointer (PSP)
 				;			b. If bit is 1, Thread mode uses Process Stack Pointer (PSP)
 			
-				MOVS	R0,	#3	; Set SPSEL bit 1, nPriv bit 1
-				MSR		CONTROL, R0	; Now thread mode uses PSP for user
-				BX		lr	; Go back to the user program
-                B       .
-                ENDP
+				MOVS	R0,	#3					; Set SPSEL bit 1, nPriv bit 1
+				MSR		CONTROL, R0				; Now thread mode uses PSP for user
+				BX		lr						; Go back to the user program
+				ENDP
 
 GPIOA_Handler\
                 PROC
