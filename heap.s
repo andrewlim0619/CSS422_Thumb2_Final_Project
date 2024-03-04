@@ -37,13 +37,13 @@ _kalloc
 		
 _rfree
 
-		SUB 		R0, R0, 0x20000000
-  		LDR 		R1, =MCB_TOP
+		SUB 		R8, R0, 0x20000000			; R0 = mcb_addr
+  		LDR 		R1, =MCB_TOP				; R8 = m2a(mcb_addr)
   		SUB		R2, R0, R1		 		; mcb_offset = mcb_addr - mcb_top
     
-		LDR 		R3, [R0]                 		; R3 = mcb_contents
+		LDR 		R3, [R8]                 		; R3 = mcb_contents
 		ASR		R4, R3, #4		 		; R4 = mcb_chunk
-		LSL		R5, R3, #4		 		; R5 = mcb_size
+		LSL		R5, R3, #4		 		; R5 = my_size
 
   		DIV 		R6, R2, R4	
     		AND 		R7, R6, #1
@@ -56,17 +56,62 @@ _rfree
   		CMP		R6, R7					; Line 150 in heap.c
 		BGE		return_zero
 
-  		SUB		R6, R6, 0x20000000
+  		SUB		R6, R6, 0x20000000			
     		LDR		R7, [R6]				; R7 = mcb_buddy
 
+							  		
+    		ANDS		R8, R7, #1				; Line 158 
+      		CMP		R8, #0
+		BNE		odd_case
+  
+
+  		LSR 		R7, R7, #5
+    		LSL		R7, R7, #5				; Line 162
+
+		CMP		R7, R5
+  		BNE		odd_case				; Line 163
+
+      		MOV		[R6], #0					; Line 168
+		LSL		R5, R5, #1				; my_size *= 2
+  		STR		R5, [R0]
+
+      		STMFD		sp!, {R0-R12,lr}			; save registers
+		BL		_rfree					; Recursion (line 178)
+		LDMFD		sp!, {R0-R12,lr}			; resume registers
+	
+    	_odd_case:							; Line 183
+     		SUB		R6, R0, R4				; R6 = mcb_addr - mcb_chunk
+       		CMP		R1, R6
+	 	BGE		return_zero
+
+   		SUB		R6, R6, 0x20000000			; R6 = m2a(mcb_addr - mcb_chunk)			
+     		LDR		R7, [R6]				; R7 = mcb_buddy
+       	
+		ANDS		R8, R7, #1				; Line 195
+  		CMP		R8, #0
+    		; BNE/BQE can't understand where it branches to
+
+  		LSR 		R7, R7, #5
+    		LSL		R7, R7, #5				; Line 199
+
+      		CMP		R7, R5
+		BQE 		return_zero				; Line 200
+		
+		STR		R8, #0
+    		LSL		R5, R5, #1				; my_size *= 2
+		STR		R5, [R6]				; Line 207
+
+  		
+		STMFD		sp!, {R0-R12,lr}			; save registers
+  		MOV		R0, R6
+		BL		_rfree					; Recursion (line 178)
+		LDMFD		sp!, {R0-R12,lr}			; resume registers
       		
-    	_odd_case:
-      		
-	return_zero:
+	return_zero
   		return 		R0, #0
     		BX		LR					; Return from function
   		
-    		
+    		BX		LR					; Return mcb_addr
   		
 		END
 
