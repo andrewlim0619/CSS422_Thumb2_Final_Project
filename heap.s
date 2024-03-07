@@ -71,7 +71,7 @@ _rfree
 		CMP		R7, R5
   		BNE		odd_case				; Line 163
 
-      		MOV		[R6], #0					; Line 168
+      		MOV		[R6], #0				; Line 168
 		LSL		R5, R5, #1				; my_size *= 2
   		STR		R5, [R0]
 
@@ -89,7 +89,8 @@ _rfree
        	
 		ANDS		R8, R7, #1				; Line 195
   		CMP		R8, #0
-    		; BNE/BQE can't understand where it branches to
+    		BNE		return_zero
+    		; Can't understand where it branches to
 
   		LSR 		R7, R7, #5
     		LSL		R7, R7, #5				; Line 199
@@ -104,7 +105,7 @@ _rfree
   		
 		STMFD		sp!, {R0-R12,lr}			; save registers
   		MOV		R0, R6
-		BL		_rfree					; Recursion (line 178)
+		BL		_rfree					; Recursion (line 216)
 		LDMFD		sp!, {R0-R12,lr}			; resume registers
       		
 	return_zero
