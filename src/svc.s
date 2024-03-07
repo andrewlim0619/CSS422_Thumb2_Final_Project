@@ -58,6 +58,3 @@ _syscall_table_jump
 		MOV		pc, lr			
 		
 		END
-
-
-		
