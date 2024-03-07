@@ -8,12 +8,12 @@ HEAP_BOT	EQU		0x20004FE0
 MAX_SIZE	EQU		0x00004000		; 16KB = 2^14
 MIN_SIZE	EQU		0x00000020		; 32B  = 2^5
 	
-MCB_TOP		EQU		0x20006800      	; 2^10B = 1K Space
+MCB_TOP		EQU		0x20006800      ; 2^10B = 1K Space
 MCB_BOT		EQU		0x20006BFE
 MCB_ENT_SZ	EQU		0x00000002		; 2B per entry
-MCB_TOTAL	EQU		512			; 2^9 = 512 entries
+MCB_TOTAL	EQU		512				; 2^9 = 512 entries
 	
-INVALID		EQU		-1			; an invalid id
+INVALID		EQU		-1				; an invalid id
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Memory Control Block Initialization
@@ -58,6 +58,7 @@ _ralloc_init
 		BL	_ralloc
 		
 		POP		{lr}
+		MOV 	R0, R12
 		MOV		pc, lr
 		
 _ralloc		

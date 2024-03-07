@@ -268,15 +268,19 @@ UsageFault_Handler\
                 EXPORT  UsageFault_Handler        [WEAK]
                 B       .
                 ENDP
-SVC_Handler     PROC 							; (Step 2)
+SVC_Handler     PROC 		; (Step 2)
 				EXPORT  SVC_Handler               [WEAK]
-				IMPORT	_syscall_table_jump
-					
-				STMFD	sp!, {r2-r12,lr}		; Save registers 
-				BL		_syscall_table_jump		; Invoke _syscall_table_jump	
-				LDMFD	sp!, {r2-r12,lr}		; Retrieve registers
-				
-				BX		lr						; Go back to stdlib.s
+				IMPORT		_syscall_table_jump
+				; Save registers 
+				PUSH	{lr}
+				; Invoke _syscall_table_jump
+				BL		_syscall_table_jump
+				MRS    R1, PSP
+                STR    R0, [R1]
+				; Retrieve registers
+				POP		{lr}
+				; Go back to stdlib.s 
+                BX		lr
                 ENDP
 DebugMon_Handler\
                 PROC

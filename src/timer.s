@@ -24,22 +24,21 @@ USR_HANDLER EQU		0x20007B84		; Address of a user-given signal handler function
 _timer_init
 	;; Implement by yourself
 		;;(1) Make sure to stop SysTick:
-		;;	Set SYST_CSRâ€™s Bit 2 (CLK_SRC) = 1, Bit 1 (INT_EN) = 0, Bit 0 (ENABLE) = 0
+		;;	Set SYST_CSR’s Bit 2 (CLK_SRC) = 1, Bit 1 (INT_EN) = 0, Bit 0 (ENABLE) = 0
 		;;(2) Load the maximum value to SYST_RVR:
 		;;	The value should be 0x00FFFFFF which means MAX Value = 1/16MHz * 16M = 1 second
 		
 		;; Stop SysTick:
-		LDR	R3, =STCTRL
-		LDR	R4, =STCTRL_STOP
-		STR	R4, [R3]
+		LDR		r1, =STCTRL				; load systick control
+		LDR		r0, =STCTRL_STOP		; load systick stop value (4)
+		STR		r0, [r1]				; update systick control to stop
+	
+		LDR		r0, =STRELOAD_MX		; load countdown to r0 to equal 1 second
+		LDR		r1, =STRELOAD			; load address of systick reload into r1
+		STR		r0, [r1]				; Load the maximum value to SYST_RVR(STRELOAD)
+	
+		MOV		pc, lr		; return to Reset_Handler
 		
-		;; Load the maximum value to SYST_RVR
-		LDR	R5, =STRELOAD
-		LDR	R6, =STRELOAD_MX
-		STR	R5, [R6]
-		
-		MOV		pc, lr			; return to Reset_Handler
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Timer start
 ; int timer_start( int seconds )
@@ -53,7 +52,7 @@ _timer_start
 		;; 		value and should be returned to main( ).
 		;; (2) Save a new seconds parameter from alarm( ) to memory address 0x20007B80.
 		;; (3) Enable SysTick:
-		;; 		Set SYST_CSRâ€™s Bit 2 (CLK_SRC) = 1, Bit 1 (INT_EN) = 1, Bit 0 (ENABLE) = 1
+		;; 		Set SYST_CSR’s Bit 2 (CLK_SRC) = 1, Bit 1 (INT_EN) = 1, Bit 0 (ENABLE) = 1
 		;; (4) Clear SYST_CVR:
 		;; 		Set 0x00000000 in SYST_CVR
 		
@@ -67,14 +66,14 @@ _timer_start
 		LDR		R3, =STCTRL		; R3 holds memory address of SysTick Control and Status Register
 		LDR		R4, =STCTRL_GO		; R4 holds [Bit 2 (CLK_SRC) = 1, Bit 1 (INT_EN) = 1, Bit 0 (ENABLE) = 1 ---> STCTRL_GO]
 		STR		R4, [R3]		; Update address of SysTick Control and Status Register ---> Systick Enabled
-
 		
 		;; Clear SYST_CVR:
-		LDR	R5, =STCURRENT
+		LDR		R5, =STCURRENT
 		MOV 	R6, #0x00000000			
 		STR		R6, [R5]		; Set 0x00000000 in SYST_CVR
 		
 		MOV 	R0, R2			; Return seconds left into main through R0
+		
 		MOV		pc, lr			; return to SVC_Handler
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -86,26 +85,31 @@ _timer_update
 		;; _timer_update in timer.s to decrement the count provided by alarm( ), to check if the count
 		;; reached 0, and if so to stop the timer as well as invoke func specified by signal( SIG_ALRM, func )
 		;; Decrement seconds at 0x2000.7B80 and invokes *func at 0x2000.7B84
-    
+
 		LDR		R1, =SECOND_LEFT	; R1 holds memory address to how many seconds left
 		LDR		R2, [R1] 		; R2 holds how many seconds left
-		SUBS 	R2, R2, #1		; Decrement seconds left by 1
+		SUB 	R2, R2, #1		; Decrement seconds left by 1
+		STR 	R2, [R1]
 		
 		; If seconds == 0, go to stop_Timer, else go to return
 		CMP 	R2, #0
-		BNE		return_Sys
+		BNE		_timer_update_done
 		
-stop_timer
+
 		;; Stop the timer first
-		LDR	R3, =STCTRL
-		LDR	R4, =STCTRL_STOP
-		STR	R4, [R3]
+		LDR		R3, =STCTRL
+		LDR		R4, =STCTRL_STOP
+		STR		R4, [R3]
 		
 		;; Invoke *func at 0x2000.7B84
 		LDR 	R5, =USR_HANDLER
-		LDR	R6, [R5]
+		LDR		R6, [R5]
 		
-return_Sys
+		STMFD	sp!, {r1-r12,lr}		; save registers
+		BLX 	R6
+		LDMFD	sp!, {r1-r12,lr}		; resume registers
+
+_timer_update_done
 		MOV		pc, lr			; return to SysTick_Handler
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -127,6 +131,6 @@ if_Clause
 		STR		R1, [R2]		; Store *func located in R1 in the address of R2, 0x20007B84 (USR_HANDLER at R2)
 		MOV 	R0, R3 			; Move value in R3 to R0 to return value to main through R0
 
-return_Res	
+return_Res
 		MOV		pc, lr			; return to Reset_Handler
 		END		
