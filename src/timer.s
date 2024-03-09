@@ -29,13 +29,18 @@ _timer_init
 		;;	The value should be 0x00FFFFFF which means MAX Value = 1/16MHz * 16M = 1 second
 		
 		;; Stop SysTick:
-		LDR		r1, =STCTRL				; load systick control
-		LDR		r0, =STCTRL_STOP		; load systick stop value (4)
-		STR		r0, [r1]				; update systick control to stop
-	
-		LDR		r0, =STRELOAD_MX		; load countdown to r0 to equal 1 second
-		LDR		r1, =STRELOAD			; load address of systick reload into r1
-		STR		r0, [r1]				; Load the maximum value to SYST_RVR(STRELOAD)
+		LDR		R0, =STCTRL_STOP		; load systick control
+		LDR		R1, =STCTRL				; load systick stop value (4)
+		STR		R0, [R1]				; update systick control to stop
+		
+		;; Load the maximum value to SYST_RVR
+		LDR		R0, =STRELOAD_MX		; load countdown to r0 to equal 1 second
+		LDR		R1, =STRELOAD			; load address of systick reload into r1
+		STR		R0, [R1]				
+
+		LDR		r0, =STCURRENT	
+		LDR		r1, =0x00000000			; Ensure register is clear for use and no remaining time leftovers
+		STR		r1, [r0]
 	
 		MOV		pc, lr		; return to Reset_Handler
 		
