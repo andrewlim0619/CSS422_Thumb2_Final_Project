@@ -22,4 +22,10 @@ supervisor mode). For more details, log in one of the CSS Linux servers and type
 where function is either bezro, strncpy, malloc, free, signal, or alarm
 
 ## Program Flow Diagram
-![ProgramFlowDiagram](https://github.com/andrewlim0619/CSS422_Thumb2_Final_Project/blob/main/Support_Files/CSS%20422.png?raw=true)
+![ProgramFlowDiagram](https://github.com/andrewlim0619/CSS422_Thumb2_Final_Project/blob/main/Support_Files/CSS%20422.png?raw=true) 
+<br />
+## GitHub Repo Directory
+• __C_Files__ - Run Heap Init in C <br />
+• __Support_Files__ - All Supporting files, including our group's documentation <br />
+• __final_project_files___ - Initial supporting files given by Faculty with partially implemented functions <br />
+• __src__ - Contains all of the files our group implemented, in __Keil uVision 5__ Software <br />
