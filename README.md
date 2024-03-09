@@ -1,8 +1,8 @@
 # CSS 422, Implemented by the 422Group
 __Programmers:__ Andrew Lim, Kayden Grant, Rod Hoda <br />
-__Program:__ Thumb-2 Implementation Work of Memory/Time-Related C Standard Library Functions
-__Quarter:__ Winter 2024
-__Faculty:__ Dr. Ahmed Awad
+__Program:__ Thumb-2 Implementation Work of Memory/Time-Related C Standard Library Functions <br />
+__Quarter:__ Winter 2024, UW Bothell <br />
+__Faculty:__ Dr. Ahmed Awad <br />
 <br />
 <br />
 ## Objective 
