@@ -135,85 +135,87 @@ _ralloc_done
 		EXPORT	_kfree
 
 _kfree
-	;; Implement by yourself
 		PUSH	{lr}
 		
 		MOV		R1, R0					; Move pointer address into register R1
   		LDR		R2, =HEAP_TOP				; Load the HEAP_TOP value into R2
     	LDR		R3, =HEAP_BOT				; Load the HEAP_BOT value into R3	
-		ADD		R1, R1, R2
 
 		; If statement
-	    CMP  		R1, R2					; If address is smaller than HEAP_TOP
-    	BLT  		_invalid_address			; Return Null
-   	 	CMP  		R1, R3					; If address is larger than HEAP_BOT
-    	BGT  		_invalid_address			; Return Null
+	    CMP  	R1, R2					; If address is smaller than HEAP_TOP
+    	BLT  	_invalid_address			; Return Null
+   	 	CMP  	R1, R3					; If address is larger than HEAP_BOT
+    	BGT  	_invalid_address			; Return Null
 
 		 ; Compute the MCB address
-		LDR  		R4, =MCB_TOP     			; Load the top of the MCB
-    	SUB  		R1, R1, R2      			; Subtract HEAP_TOP from the pointer
-    	LSR  		R1, R1, #4       			; Divide the difference by 16 (logical shift right by 4 bits)
-    	ADD  		R1, R4, R1       			; Add the result to MCB_TOP to get the MCB address
+		LDR  	R4, =MCB_TOP     			; Load the top of the MCB
+    	SUB  	R5, R1, R2      			; Subtract HEAP_TOP from the pointer
+    	ASR  	R5, R5, #4       			; Divide the difference by 16 (logical shift right by 4 bits)
+    	ADD  	R5, R4, R5       			; Add the result to MCB_TOP to get the MCB address
 
 		; Call the _rfree function 
-		BL   		_rfree
-		POP			{LR}
-		CMP  		R0, #0           			; Check if MCB address passed into _rfree() returns 0
-		BEQ			_invalid_address
-		MOV			pc, lr
+		MOV		R0, R5
+		PUSH 	{R1-R12}
+		BL   	_rfree
+		POP		{R1-R12}
+		CMP  	R0, #0           			; Check if MCB address passed into _rfree() returns 0
+		BEQ		_invalid_address
+		
+		POP		{LR}
+		MOV		pc, lr
 		
 _invalid_address
-		MOV  		R0, #0           			; Set the return value to NULL
-		B			_free_done
+		MOV  	R0, #0           			; Set the return value to NULL
+		POP		{LR}
+		MOV		pc, lr
 	
 _rfree
 		PUSH	{lr}
-		
-		MOV		R0, R1						; R0 = mcb_addr
-  		LDR 	R1, =MCB_TOP				; R1 = MCB_TOP
-  		SUB		R2, R0, R1		 		; R2 = mcb_offset -> mcb_addr - mcb_top
+											; R0 = MCB_addr
+		LDR		R1, [R0]					; R1 = MCB_contents = mem[R0]
+  		LDR 	R2, =MCB_TOP				; R2 = MCB_TOP
+  		SUB		R3, R0, R2		 			; R3 = MCB_offset = mcb_addr - mcb_top
     
-		LDR 	R3, [R0]                 ; R3 = mcb_contents
-		ASR		R4, R3, #4		 		; R4 = mcb_chunk
-		LSL		R5, R3, #4		 		; R5 = my_size
+		ASR		R1, R1, #4		 			
+		MOV		R4, R1						; R4 = MCB_chunk
+		LSL		R1, R1, #4		 			
+		MOV		R5, R1						; R5 = my_size
 		
-		STR		R3, [R0]
+		STR		R1, [R0]
 
-  		SDIV 	R6, R2, R4
-    	AND 	R6, R6, #1
-      	CMP 	R6, #0			 		; Line 146 in heap.c
+  		SDIV 	R6, R3, R4
+    	AND 	R6, R6, #1					
+      	CMP 	R6, #0			 			; ( mcb_offset / mcb_chunk ) % 2 == 0
 		BNE		_odd_case		
 		
-		; Even Case
-		ADD 	R6, R0, R4
+		; Even Case 
+		ADD 	R6, R0, R4					; R6 = MCB_addr + MCB_chunk
   		LDR		R7, =MCB_BOT
-  		CMP		R6, R7					; Line 150 in heap.c
+  		CMP		R6, R7						; mcb_addr + mcb_chunk >= mcb_bot
 		BGE		return_zero
 		
-    	LDR		R7, [R6]				; R7 = mcb_buddy
-							  		
-    	AND		R8, R7, #1				; Line 158 
-      	CMP		R8, #0
+    	LDR		R7, [R6]					; R7 = mcb_buddy	
+		
+    	AND		R8, R7, #1					
+      	CMP		R8, #0						; ( mcb_buddy & 0x0001 ) == 0
 		BNE		_free_done
   
-  		LSR 	R7, R7, #5
-    	LSL		R7, R7, #5				; Line 162
-
+  		ASR 	R7, R7, #5
+    	LSL		R7, R7, #5					; mcb_buddy = ( mcb_buddy / 32 ) * 32
 		CMP		R7, R5
-  		BNE		_free_done				; Line 163
+  		BNE		_free_done					; Line 163
 
-		MOV		R8, #0
-      	STR		R8, [R6]				; Line 168
-		LSL		R5, R5, #1				; my_size *= 2
-  		STR		R5, [R0]
+      	STR		R8, [R6]					; *(short *)&array[ m2a( mcb_addr + mcb_chunk ) ] = 0; // clear my buddy
+		LSL		R5, #1						; my_size *= 2
+  		STR		R5, [R0]					; *(short *)&array[ m2a( mcb_addr ) ] = my_size; // merge my budyy
 
-      	PUSH	{R0-R12,lr}			; save registers
+		
 		BL		_rfree					; Recursion (line 178)
-		POP		{R0-R12,lr}			; resume registers
+		B		_free_done
 	
 _odd_case								; Line 183
      	SUB		R6, R0, R4				; R6 = mcb_addr - mcb_chunk
-       	CMP		R1, R6
+       	CMP		R2, R6
 	 	BGT		return_zero
 		
      	LDR		R7, [R6]				; R7 = mcb_buddy
@@ -222,26 +224,21 @@ _odd_case								; Line 183
   		CMP		R8, #0
     	BNE		_free_done
 
-  		LSR 	R7, R7, #5
-    	LSL		R7, R7, #5				; Line 199
-
+  		ASR 	R7, R7, #5
+    	LSL		R7, R7, #5				; mcb_buddy = ( mcb_buddy / 32 )
       	CMP		R7, R5
-		BEQ	 	_free_done				; Line 200
+		BNE	 	_free_done				; Line 200 [was BEQ for some reason)
 		
-		MOV		R9, #0
-		STR		R9, [R0]
-    	LSL		R5, R5, #1				; my_size *= 2
+		STR		R8, [R0]
+    	LSL		R5, #1					; my_size *= 2
 		STR		R5, [R6]				; Line 207
 
-  		
-		PUSH	{R0-R12,lr}			; save registers
-		LDR		R0, [R6]
+		MOV		R0, R6
 		BL		_rfree					; Recursion (line 216)
-		POP		{R0-R12,lr}			; resume registers
-      		
+		B		_free_done
+		
 return_zero
   		MOV 	R0, #0
-    	BX		LR					; Return from function
 
 _free_done
   		POP	{lr}
