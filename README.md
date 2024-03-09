@@ -3,8 +3,7 @@ __Programmers:__ Andrew Lim, Kayden Grant, Rod Hoda <br />
 __Program:__ Thumb-2 Implementation Work of Memory/Time-Related C Standard Library Functions <br />
 __Quarter:__ Winter 2024, UW Bothell <br />
 __Faculty:__ Dr. Ahmed Awad <br />
-<br />
-<br />
+
 ## Objective 
 You’ll understand the following concepts at the ARM assembly language level through this final project 
 that implements memory/time-related C standard library functions in Thumb-2. <br />
